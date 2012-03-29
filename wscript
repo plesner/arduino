@@ -92,7 +92,6 @@ def build(bld):
   helper.configure_toolchain()
   user_srcs = bld.path.ant_glob('src/**/*.cc')
   core_srcs = [helper.copy_core_file(s) for s in [
-    'main.cpp',
     'wiring_digital.c',
     'wiring.c'
   ]]

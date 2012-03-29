@@ -141,3 +141,17 @@ bool Pin::is_high() {
 
   return (*portInputRegister(port) & bit);
 }
+
+void Pin::print(uint32_t value) {
+  bool initial = is_high();
+  uint32_t current = value;
+  do {
+    bool is_on = current & 1;
+    current = current >> 1;
+    set_high(true);
+    delay(is_on ? 250 : 100);
+    set_high(false);
+    delay(350);
+  } while (current != 0);
+  set_high(initial);
+}
