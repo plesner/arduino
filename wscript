@@ -83,7 +83,7 @@ class BuildHelper(object):
     self.build.new_task_gen(
       source  = progmem,
       depends = eeprom,
-      rule    = '${AVRDUDE} -C%s/etc/avrdude.conf -v -v -v -v -patmega328p -carduino -P/dev/tty.usbmodem621 -b115200 -D -Uflash:w:${SRC}:i' % _AVR,
+      rule    = '${AVRDUDE} -C%s/etc/avrdude.conf -v -v -v -v -patmega328p -carduino -P/dev/tty.usbmodem24111 -b115200 -D -Uflash:w:${SRC}:i' % _AVR,
       always  = True
     )
 

@@ -3,47 +3,28 @@
 
 #include "read-only.h"
 
-namespace progmem {
-
-template <size_t width>
-class Reader {
+template <size_t kSize>
+class ReadOnlyArrayByteReader {
 public:
-  template <typename T>
-  static T read(T *address);
-};
-
-template <>
-class Reader<1u> {
-public:
-  template <typename T>
-  static T read(T *address) {
-    return pgm_read_byte(address);
+  static const size_t kIndex = kSize - 1;
+  static inline void read(uint16_t address, uint8_t *target) {
+    ReadOnlyArrayByteReader<kSize - 1>::read(address, target);
+    target[kIndex] = pgm_read_byte(address + kIndex);
   }
 };
 
 template <>
-class Reader<2u> {
+class ReadOnlyArrayByteReader<0> {
 public:
-  template <typename T>
-  static T read(T *address) {
-    return pgm_read_word(address);
-  }
+  static inline void read(uint16_t address, uint8_t *target) { }
 };
 
-template <>
-class Reader<4u> {
-public:
-  template <typename T>
-  static T read(T *address) {
-    return pgm_read_dword(address);
-  }
-};
-
-} // progmem
-
-template <typename T, size_t size>
-T ReadOnlyArray<T, size>::operator[](size_t index) {
-  return progmem::Reader<sizeof(T)>::read(data_ + index);
+template <typename T>
+T read_only_array<T>::operator[](size_t index) {
+  union { uint8_t in[sizeof(T)]; T out; } converter;
+  uint16_t address = reinterpret_cast<uint16_t>(data_ + index);
+  ReadOnlyArrayByteReader<sizeof(T)>::read(address, converter.in);
+  return converter.out;
 }
 
 #endif // _READ_ONLY_IMPL
