@@ -83,7 +83,7 @@ class BuildHelper(object):
     self.build.new_task_gen(
       source  = progmem,
       depends = eeprom,
-      rule    = '${AVRDUDE} -C%s/etc/avrdude.conf -v -v -v -v -patmega328p -carduino -P/dev/tty.usbmodem24111 -b115200 -D -Uflash:w:${SRC}:i' % _AVR,
+      rule    = '${AVRDUDE} -C%s/etc/avrdude.conf -v -v -v -v -patmega328p -carduino -P/dev/tty.usbmodem411 -b115200 -D -Uflash:w:${SRC}:i' % _AVR,
       always  = True
     )
 
@@ -93,7 +93,6 @@ def build(bld):
   user_srcs = bld.path.ant_glob('src/**/*.cc')
   core_srcs = [helper.copy_core_file(s) for s in [
     'wiring_digital.c',
-    'wiring.c'
   ]]
   includes = [_CORE_LIB, _PLATFORM_LIB]
   helper.program(

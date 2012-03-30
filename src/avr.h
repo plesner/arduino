@@ -3,9 +3,6 @@
 
 #include <stdint.h>
 
-// A time interval measured in milliseconds.
-typedef uint32_t delay_t;
-
 // Helper class for interacting with interrupts.
 class Interrupts {
 public:

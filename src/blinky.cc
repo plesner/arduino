@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "pin.h"
+#include "time.h"
 #include "main.h"
 #include "read-only-impl.h"
 
@@ -21,5 +22,5 @@ void Main::loop() {
   read_only_array<Point> points = points_block;
   Pin pin = Pin::get(13);
   pin.print(points[0].x);
-  delay(1000);
+  Time::sleep(Duration::seconds(1));
 }
