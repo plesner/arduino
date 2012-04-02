@@ -11,16 +11,37 @@ struct Point {
 };
 
 void Main::setup() {
+  Pin::get(8).set_data_direction(Pin::OUT);
+  Pin::get(9).set_data_direction(Pin::OUT);
+  Pin::get(10).set_data_direction(Pin::OUT);
+  Pin::get(11).set_data_direction(Pin::OUT);
+  Pin::get(12).set_data_direction(Pin::OUT);
   Pin::get(13).set_data_direction(Pin::OUT);
 }
 
-static PROGMEM read_only_array_block<Point, 2> points_block = {{
-    {2, 3}
-}};
+class Digit {
+public:
+  Digit(uint8_t *pinv, uint8_t pinc)
+    : pinv_(pinv)
+    , pinc_(pinc) { }
+  void show(uint8_t value);
+private:
+  uint8_t *pinv_;
+  uint8_t pinc_;
+};
+
+void Digit::show(uint8_t value) {
+  for (uint8_t i = 0; i < pinc_; i++) {
+    Pin::get(pinv_[i]).set_high((value & (1 << i)) != 0);
+  }
+}
 
 void Main::loop() {
-  read_only_array<Point> points = points_block;
-  Pin pin = Pin::get(13);
-  pin.print(points[0].x);
-  Time::sleep(Duration::seconds(1));
+  static const uint8_t kDigits = 6;
+  uint8_t digits[kDigits] = {13, 11, 12, 10, 9, 8};
+  Digit digit(digits, kDigits);
+  for (int8_t value = -5; value < 5; value++) {
+    digit.show(1 << (value < 0 ? -value : value));
+    Time::sleep(Duration::millis(100));
+  }
 }

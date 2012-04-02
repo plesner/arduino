@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "avr.h"
 #include "time.h"
 
 volatile unsigned long Time::timer0_overflow_count = 0;
@@ -6,31 +7,32 @@ volatile unsigned long Time::timer0_millis = 0;
 unsigned char Time::timer0_fract = 0;
 
 uint16_t Time::micros() {
-        unsigned long m;
-        uint8_t oldSREG = SREG, t;
+  uint16_t m;
+  uint8_t t;
 
-        cli();
-        m = timer0_overflow_count;
+  {
+    Interrupts::DisableDuring disable_interrupts;
+    m = timer0_overflow_count;
+
 #if defined(TCNT0)
-        t = TCNT0;
+    t = TCNT0;
 #elif defined(TCNT0L)
-        t = TCNT0L;
+    t = TCNT0L;
 #else
-        #error TIMER 0 not defined
+    #error TIMER 0 not defined
 #endif
 
 
 #ifdef TIFR0
-        if ((TIFR0 & _BV(TOV0)) && (t < 255))
-                m++;
+    if ((TIFR0 & _BV(TOV0)) && (t < 255))
+      m++;
 #else
-        if ((TIFR & _BV(TOV0)) && (t < 255))
-                m++;
+    if ((TIFR & _BV(TOV0)) && (t < 255))
+      m++;
 #endif
+  }
 
-        SREG = oldSREG;
-
-        return ((m << 8) + t) * (64 / clockCyclesPerMicrosecond());
+  return ((m << 8) + t) * (64 / clockCyclesPerMicrosecond());
 }
 
 void Time::sleep(duration_t duration) {
@@ -64,8 +66,8 @@ SIGNAL(TIMER0_OVF_vect) {
 void Time::tick() {
   // copy these to local variables so they can be stored in registers
   // (volatile variables must be read from memory on every access)
-  unsigned long m = timer0_millis;
-  unsigned char f = timer0_fract;
+  uint16_t m = timer0_millis;
+  uint8_t f = timer0_fract;
 
   m += MILLIS_INC;
   f += FRACT_INC;

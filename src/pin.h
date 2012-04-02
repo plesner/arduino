@@ -26,17 +26,25 @@ public:
 };
 
 struct PinInfo {
-  static const int8_t kNotAPin = 0;
-  static const int8_t kPb = 2;
-  static const int8_t kPc = 3;
-  static const int8_t kPd = 4;
-
   int8_t timer;
   int8_t bit_mask;
   int8_t port;
   int8_t padding;
 
   static read_only_array<PinInfo> get();
+};
+
+struct PortInfo {
+  static const int8_t kNotAPort = 0;
+  static const int8_t kPb = 2;
+  static const int8_t kPc = 3;
+  static const int8_t kPd = 4;
+
+  volatile uint8_t *mode_register;
+  volatile uint8_t *output_register;
+  volatile uint8_t *input_register;
+
+  static read_only_array<PortInfo> get();
 };
 
 // A single input/output pin. Create an instance by using the static
@@ -65,17 +73,31 @@ public:
   void print(uint32_t value);
 
 private:
-  Pin(uint8_t index) : info_(PinInfo::get()[index]) { }
+  Pin(uint8_t index)
+      : pin_info_(PinInfo::get()[index])
+      , port_info_(PortInfo::get()[pin_info().port]){ }
 
-  bool is_pin() { return info().port != PinInfo::kNotAPin; }
+  // Returns true iff this is a valid pin.
+  bool is_pin() { return pin_info().port != PortInfo::kNotAPort; }
 
-  bool is_on_timer() { return info().timer != Timers::kNotOnTimer; }
+  // Returns true if this pin is on a timer.
+  bool is_on_timer() { return pin_info().timer != Timers::kNotOnTimer; }
+
+  // Disables pulse-width modulation for this pin. If this pin is not
+  // on a timer does nothing.
+  void disable_pwm();
 
   // Returns the metadata about this pin.
-  inline PinInfo info() { return info_; }
+  inline PinInfo &pin_info() { return pin_info_; }
 
-  // The index of the pin.
-  PinInfo info_;
+  // Returns the metadata about the port this pin belongs to.
+  inline PortInfo &port_info() { return port_info_; }
+
+  // Metadata about this specific pin.
+  PinInfo pin_info_;
+
+  // Metadata about the port this pin belongs to.
+  PortInfo port_info_;
 };
 
 #endif // _PIN
