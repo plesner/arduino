@@ -9,20 +9,38 @@ VERSION = '0.01'
 
 top = '.'
 out = 'out'
+app = 'blink'
 
-_AVR = '/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr'
-_HARDWARE = '/Applications/Arduino.app/Contents/Resources/Java/hardware'
+_DISTROOT = '/Applications/Arduino.app/Contents/Resources/Java'
+_HARDWARE = _DISTROOT + '/hardware'
+_AVR = _HARDWARE + '/tools/avr'
 _AVR_BIN = _HARDWARE + '/tools/avr/bin/%s'
 _CORE_LIB = _HARDWARE + '/arduino/cores/arduino/'
 _PLATFORM_LIB = _HARDWARE + '/arduino/variants/standard/'
-_DEVICE = 'atmega328p'
-_CLOCK = '16000000L'
+
+_DIALECT = ['-Wall', '-Wextra', '-ansi', '-Wno-uninitialized', '-Wno-unused-parameter']
+
+_BAUD = '115200'
+_PROGRAMMER = 'arduino'
 
 def configure(conf):
   conf.load('compiler_cxx')
+  conf.env['PORT'] = conf.options.port
 
 def options(opt):
   opt.load('compiler_cxx')
+  opt.add_option('--device',
+    default = 'atmega328p',
+    action = 'store',
+    help = 'the type of device we\'re building for')
+  opt.add_option('--port',
+    default = None,
+    action = 'store',
+    help = 'which port to flash (typically /dev/tty.usbmodem...')
+  opt.add_option('--clock',
+    default = '16000000',
+    action = 'store',
+    help = 'clock frequency of the device')
 
 # Wrapper around a waf builder thingy that adds some useful utilities.
 # That way the nastiness is encapsulated here and the build rule can
@@ -30,7 +48,9 @@ def options(opt):
 class BuildHelper(object):
 
   _TOOLS = {
-    'CXX': 'avr-g++', 'LINK_CXX': 'avr-g++', 'OBJCOPY': 'avr-objcopy',
+    'CXX': 'avr-g++',
+    'LINK_CXX': 'avr-g++',
+    'OBJCOPY': 'avr-objcopy',
     'AVRDUDE': 'avrdude'
   }
 
@@ -45,20 +65,6 @@ class BuildHelper(object):
   def configure_toolchain(self):
     for name, tool in BuildHelper._TOOLS.items():
       self.build.env[name] = _AVR_BIN % tool
-
-  # Copies a core library from the arduino distribution to the build
-  # directory so waf will put the compiled object files there, rather
-  # than pollute the distribution.
-  #
-  # Returns the name of the file in the build directory.
-  def copy_core_file(self, name):
-    core_name = 'core_%s' % name
-    self.build.new_task_gen(
-      source = self.build.root.find_resource(_CORE_LIB + name),
-      target = core_name,
-      rule   = 'cp ${SRC} ${TGT}'
-    )
-    return core_name
 
   # Pulls the eeprom part out of the source binary and stores the rest
   # in a separate hex file.
@@ -80,36 +86,60 @@ class BuildHelper(object):
     )
 
   def flash(self, progmem, eeprom):
+    port = self.get_port()
+    if not port:
+      raise AssertionError("No --port specified.")
     self.build.new_task_gen(
       source  = progmem,
       depends = eeprom,
-      rule    = '${AVRDUDE} -C%s/etc/avrdude.conf -v -v -v -v -patmega328p -carduino -P/dev/tty.usbmodem411 -b115200 -D -Uflash:w:${SRC}:i' % _AVR,
+      rule    = '${AVRDUDE} -C%(avr)s/etc/avrdude.conf -v -v -v -v -p%(device)s -c%(programmer)s -P%(port)s -b%(baud)s -D -Uflash:w:${SRC}:i' % {
+        'avr': _AVR,
+        'device': self.get_device(),
+        'port': port,
+        'baud': _BAUD,
+        'programmer': _PROGRAMMER
+      },
       always  = True
     )
 
+  def get_port(self):
+    options = self.build.options
+    if options.port:
+      return options.port
+    else:
+      return self.build.env['PORT']
+
+  def get_clock(self):
+    return self.build.options.clock
+
+  def get_device(self):
+    return self.build.options.device
+
+  def build_sources(self):
+    self.configure_toolchain()
+    sources = self.build.path.ant_glob('src/**/*.cc')
+    includes = [_CORE_LIB, _PLATFORM_LIB]
+    elf_file = '%s.elf' % app
+    self.program(
+      source   = sources,
+      target   = elf_file,
+      includes = includes,
+      cxxflags = ['-Os', '-mmcu=%s' % self.get_device()] + _DIALECT,
+      linkflags = ['-Os', '-mmcu=%s' % self.get_device()],
+      defines  = ['F_CPU=%sL' % self.get_clock()]
+    )
+    self.remove_eeprom(elf_file, '%s.hex' % app)
+    self.extract_eeprom(elf_file, '%s.eep' % app)
+
+
 def build(bld):
   helper = BuildHelper(bld)
-  helper.configure_toolchain()
-  user_srcs = bld.path.ant_glob('src/**/*.cc')
-  core_srcs = [helper.copy_core_file(s) for s in [
-    'wiring_digital.c',
-  ]]
-  includes = [_CORE_LIB, _PLATFORM_LIB]
-  helper.program(
-    source   = user_srcs + core_srcs,
-    target   = 'blinky.elf',
-    includes = includes,
-    cxxflags = ['-Os', '-mmcu=%s' % _DEVICE],
-    linkflags = ['-Os', '-mmcu=%s' % _DEVICE],
-    defines  = ['F_CPU=%s' % _CLOCK]
-  )
-  helper.remove_eeprom('blinky.elf', 'blinky.hex')
-  helper.extract_eeprom('blinky.elf', 'blinky.eep')
+  helper.build_sources()
 
 def flash(bld):
-  build(bld)
   helper = BuildHelper(bld)
-  helper.flash('blinky.hex', 'blinky.eep')
+  helper.build_sources()
+  helper.flash('%s.hex' % app, '%s.eep' % app)
 
 class FlashContext(BuildContext):
   cmd = 'flash'

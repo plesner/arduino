@@ -4,13 +4,11 @@
 // Container class for the methods used to run the device.
 class Main {
 public:
-  class Data;
-
   // This method is called on startup.
-  static Data &setup();
+  static void setup();
 
   // This method is called repeatedly.
-  static void loop(Data &data);
+  static void loop();
 
   // Main entry-point called from the system entry-point.
   static int main();

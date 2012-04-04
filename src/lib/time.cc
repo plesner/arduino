@@ -1,5 +1,4 @@
-#include <Arduino.h>
-#include "avr.h"
+#include "interrupt-impl.h"
 #include "time.h"
 
 volatile unsigned long Time::timer0_overflow_count = 0;

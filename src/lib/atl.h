@@ -1,6 +1,8 @@
 #ifndef _ATL
 #define _ATL
 
+#include "platform.h"
+
 // A stack-allocated array that converts easily to a vector. This can
 // be declared inline as, for example:
 //
@@ -50,16 +52,19 @@ private:
 template <typename T>
 class uninitialized {
 public:
+  // Convenience overload of ->.
+  T *operator->();
+
   // Returns the uninitialized memory cast as the object type.
-  T &operator*();
+  T &operator*() { return *this->operator->(); }
 
 private:
   uint8_t storage_[sizeof(T)];
 };
 
 template <typename T>
-T &uninitialized<T>::operator*() {
-  return *reinterpret_cast<T*>(&storage_);
+T *uninitialized<T>::operator->() {
+  return reinterpret_cast<T*>(&storage_);
 }
 
 #endif // _ATL

@@ -1,7 +1,7 @@
 #ifndef _AVR
 #define _AVR
 
-#include <stdint.h>
+#include "platform.h"
 
 // Helper class for interacting with interrupts.
 class Interrupts {
@@ -28,14 +28,5 @@ public:
     uint8_t prev_status_registers_;
   };
 };
-
-Interrupts::DisableDuring::DisableDuring()
-  : prev_status_registers_(SREG) {
-  Interrupts::disable();
-}
-
-Interrupts::DisableDuring::~DisableDuring() {
-  SREG = prev_status_registers_;
-}
 
 #endif // _AVR

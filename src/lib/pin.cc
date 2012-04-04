@@ -1,9 +1,8 @@
-#include <Arduino.h>
-
-#include "avr.h"
+#include "interrupt-impl.h"
 #include "pin.h"
-#include "time.h"
+#include "platform.h"
 #include "read-only-impl.h"
+#include "time.h"
 
 void Pin::set_data_direction(DataDirection value) {
   if (!is_pin())
@@ -185,7 +184,7 @@ void Pin::print(uint32_t value) {
 
 #define IF_ELSE(cCond, T, F) cCond(T, F)
 
-static PROGMEM read_only_elements<PinInfo, 20> pins = {{
+static read_only<PinInfo, 20> pins = {{
   /* 00 */ {
       Timers::kNotOnTimer,
       0,
@@ -292,7 +291,7 @@ read_only_vector<PinInfo> PinInfo::get() {
   return pins;
 }
 
-static PROGMEM read_only_elements<PortInfo, 5> ports = {{
+static read_only<PortInfo, 5> ports = {{
   /* - */ { 0, 0, 0 },
   /* - */ { 0, 0, 0 },
   /* B */ { &DDRB, &PORTB, &PINB },

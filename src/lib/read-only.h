@@ -19,6 +19,11 @@ struct read_only_elements {
   T data_[kLength];
 };
 
+// This macro can be used as a convenience when declaring progmem
+// data and helps ensure that the right program attributes are set
+// on the declaration.
+#define read_only __attribute__((__progmem__)) read_only_elements
+
 template <typename T>
 class read_only_vector {
 public:

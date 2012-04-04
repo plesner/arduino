@@ -1,7 +1,6 @@
-#include <Arduino.h>
-
+#include "interrupt-impl.h"
 #include "main.h"
-#include "avr.h"
+#include "platform.h"
 
 class FunctionRegister {
 public:
@@ -142,10 +141,9 @@ void Main::initialize_timers() {
 
 int Main::main() {
   initialize_timers();
-  Main::Data *data;
-  data = &setup();
+  setup();
   while (true) {
-    loop(*data);
+    loop();
     if (serialEventRun)
       serialEventRun();
   }
