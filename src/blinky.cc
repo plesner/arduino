@@ -1,10 +1,10 @@
 #include <Arduino.h>
 
-#include "atl.h"
-#include "pin.h"
-#include "time.h"
-#include "main.h"
-#include "read-only-impl.h"
+#include "lib/atl.h"
+#include "lib/main.h"
+#include "lib/pin.h"
+#include "lib/read-only-impl.h"
+#include "lib/time.h"
 
 class Main::Data {
 public:
