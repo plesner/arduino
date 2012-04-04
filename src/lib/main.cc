@@ -1,4 +1,4 @@
-#include "interrupt-impl.h"
+#include "sreg-impl.h"
 #include "main.h"
 #include "platform.h"
 
@@ -138,6 +138,8 @@ void Main::initialize_timers() {
   UCSR0B = 0;
 #endif
 }
+
+extern void serialEventRun(void) __attribute__((weak));
 
 int Main::main() {
   initialize_timers();

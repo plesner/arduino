@@ -1,7 +1,9 @@
-#ifndef _INTERRUPT_IMPL
-#define _INTERRUPT_IMPL
+#ifndef _SREG_IMPL
+#define _SREG_IMPL
 
-#include "interrupt.h"
+#include "sreg.h"
+
+#include <avr/common.h>
 
 Interrupts::DisableDuring::DisableDuring()
   : prev_status_registers_(SREG) {
@@ -12,4 +14,4 @@ Interrupts::DisableDuring::~DisableDuring() {
   SREG = prev_status_registers_;
 }
 
-#endif // _INTERRUPT_IMPL
+#endif // _SREG_IMPL

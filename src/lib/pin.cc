@@ -1,4 +1,4 @@
-#include "interrupt-impl.h"
+#include "sreg-impl.h"
 #include "pin.h"
 #include "platform.h"
 #include "read-only-impl.h"
@@ -43,91 +43,91 @@ void Pin::disable_pwm() {
     return;
   switch (pin_info().timer) {
 #if defined(TCCR1A) && defined(COM1A1)
-  case TIMER1A:
+  case Timers::kTimer1A:
     cbi(TCCR1A, COM1A1);
     break;
 #endif
 
 #if defined(TCCR1A) && defined(COM1B1)
-  case TIMER1B:
+  case Timers::kTimer1B:
     cbi(TCCR1A, COM1B1);
     break;
 #endif
 
 #if defined(TCCR2) && defined(COM21)
-  case TIMER2:
+  case Timers::kTimer2:
     cbi(TCCR2, COM21);
     break;
 #endif
 
 #if defined(TCCR0A) && defined(COM0A1)
-  case TIMER0A:
+  case Timers::kTimer0A:
     cbi(TCCR0A, COM0A1);
     break;
 #endif
 
 #if defined(TIMER0B) && defined(COM0B1)
-  case TIMER0B:
+  case Timers::kTimer0B:
     cbi(TCCR0A, COM0B1);
     break;
 #endif
 
 #if defined(TCCR2A) && defined(COM2A1)
-  case TIMER2A:
+  case Timers::kTimer2A:
     cbi(TCCR2A, COM2A1);
     break;
 #endif
 
 #if defined(TCCR2A) && defined(COM2B1)
-  case TIMER2B:
+  case Timers::kTimer2B:
     cbi(TCCR2A, COM2B1);
     break;
 #endif
 
 #if defined(TCCR3A) && defined(COM3A1)
-  case TIMER3A:
+  case Timers::kTimer3A:
     cbi(TCCR3A, COM3A1);
     break;
 #endif
 
 #if defined(TCCR3A) && defined(COM3B1)
-  case TIMER3B:
+  case Timers::kTimer3B:
     cbi(TCCR3A, COM3B1);
     break;
 #endif
 
 #if defined(TCCR3A) && defined(COM3C1)
-  case TIMER3C:
+  case Timers::kTimer3C:
     cbi(TCCR3A, COM3C1);
     break;
 #endif
 
 #if defined(TCCR4A) && defined(COM4A1)
-  case TIMER4A:
+  case Timers::kTimer4A:
     cbi(TCCR4A, COM4A1);
     break;
 #endif
 
 #if defined(TCCR4A) && defined(COM4B1)
-  case TIMER4B:
+  case Timers::kTimer4B:
     cbi(TCCR4A, COM4B1);
     break;
 #endif
 
 #if defined(TCCR4A) && defined(COM4C1)
-  case TIMER4C:
+  case Timers::kTimer4C:
     cbi(TCCR4A, COM4C1);
     break;
 #endif
 
 #if defined(TCCR5A)
-  case TIMER5A:
+  case Timers::kTimer5A:
     cbi(TCCR5A, COM5A1);
     break;
-  case TIMER5B:
+  case Timers::kTimer5B:
     cbi(TCCR5A, COM5B1);
     break;
-  case TIMER5C:
+  case Timers::kTimer5C:
     cbi(TCCR5A, COM5C1);
     break;
 #endif

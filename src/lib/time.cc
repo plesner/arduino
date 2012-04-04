@@ -1,9 +1,15 @@
-#include "interrupt-impl.h"
+#include "sreg-impl.h"
 #include "time.h"
+
+#include <avr/interrupt.h>
 
 volatile unsigned long Time::timer0_overflow_count = 0;
 volatile unsigned long Time::timer0_millis = 0;
 unsigned char Time::timer0_fract = 0;
+
+#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
+
+#define clockCyclesToMicroseconds(a) ( ((a) * 1000L) / (F_CPU / 1000L) )
 
 uint16_t Time::micros() {
   uint16_t m;

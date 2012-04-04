@@ -1,6 +1,8 @@
 #ifndef _READ_ONLY_IMPL
 #define _READ_ONLY_IMPL
 
+#include <avr/pgmspace.h>
+
 #include "read-only.h"
 
 template <size_t kSize>

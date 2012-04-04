@@ -1,5 +1,5 @@
-#ifndef _AVR
-#define _AVR
+#ifndef _SREG
+#define _SREG
 
 #include "platform.h"
 
@@ -29,4 +29,4 @@ public:
   };
 };
 
-#endif // _AVR
+#endif // _SREG
