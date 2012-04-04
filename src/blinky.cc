@@ -1,45 +1,53 @@
 #include <Arduino.h>
 
+#include "atl.h"
 #include "pin.h"
 #include "time.h"
 #include "main.h"
 #include "read-only-impl.h"
 
-struct Point {
-  int8_t x;
-  int8_t y;
+class Main::Data {
+public:
+  void initialize();
+  vector<Pin> pins() { return pins_; }
+private:
+  elements<Pin, 6> pins_;
 };
 
-void Main::setup() {
-  Pin::get(8).set_data_direction(Pin::OUT);
-  Pin::get(9).set_data_direction(Pin::OUT);
-  Pin::get(10).set_data_direction(Pin::OUT);
-  Pin::get(11).set_data_direction(Pin::OUT);
-  Pin::get(12).set_data_direction(Pin::OUT);
-  Pin::get(13).set_data_direction(Pin::OUT);
+static uninitialized<Main::Data> main_data;
+
+void Main::Data::initialize() {
+  elements<uint8_t, 6> map = {{13, 11, 12, 10, 9, 8}};
+  for (uint8_t i = 0; i < map.length(); i++) {
+    pins_[i] = Pin::get(map[i]);
+    pins_[i].set_data_direction(Pin::OUT);
+  }
+}
+
+Main::Data &Main::setup() {
+  Main::Data &result = *main_data;
+  result.initialize();
+  return result;
 }
 
 class Digit {
 public:
-  Digit(uint8_t *pinv, uint8_t pinc)
-    : pinv_(pinv)
-    , pinc_(pinc) { }
+  Digit(vector<Pin> pins)
+    : pins_(pins) { }
   void show(uint8_t value);
 private:
-  uint8_t *pinv_;
-  uint8_t pinc_;
+  vector<Pin> &pins() { return pins_; }
+  vector<Pin> pins_;
 };
 
 void Digit::show(uint8_t value) {
-  for (uint8_t i = 0; i < pinc_; i++) {
-    Pin::get(pinv_[i]).set_high((value & (1 << i)) != 0);
+  for (uint8_t i = 0; i < pins().length(); i++) {
+    pins()[i].set_high((value & (1 << i)) != 0);
   }
 }
 
-void Main::loop() {
-  static const uint8_t kDigits = 6;
-  uint8_t digits[kDigits] = {13, 11, 12, 10, 9, 8};
-  Digit digit(digits, kDigits);
+void Main::loop(Main::Data &data) {
+  Digit digit(data.pins());
   for (int8_t value = -5; value < 5; value++) {
     digit.show(1 << (value < 0 ? -value : value));
     Time::sleep(Duration::millis(100));

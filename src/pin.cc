@@ -13,14 +13,13 @@ void Pin::set_data_direction(DataDirection value) {
   volatile uint8_t *reg = port_info().mode_register;
 
   Interrupts::DisableDuring disable_interrupts;
+  uint8_t bit_mask = 1 << pin_info().bit_index;
   if (value == IN) {
-    *reg &= ~pin_info().bit_mask;
+    *reg &= ~bit_mask;
   } else {
-    *reg |= pin_info().bit_mask;
+    *reg |= bit_mask;
   }
 }
-
-
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -147,10 +146,11 @@ void Pin::set_high(bool is_on) {
   volatile uint8_t *reg = port_info().output_register;
 
   Interrupts::DisableDuring disable_interrupts;
+  uint8_t bit_mask = 1 << pin_info().bit_index;
   if (is_on) {
-    *reg |= pin_info().bit_mask;
+    *reg |= bit_mask;
   } else {
-    *reg &= ~pin_info().bit_mask;
+    *reg &= ~bit_mask;
   }
 }
 
@@ -162,8 +162,9 @@ bool Pin::is_high() {
   // before getting a digital reading.
   disable_pwm();
   volatile uint8_t *reg = port_info().input_register;
+  uint8_t bit_mask = 1 << pin_info().bit_index;
 
-  return (*reg & pin_info().bit_mask);
+  return (*reg & bit_mask);
 }
 
 void Pin::print(uint32_t value) {
@@ -184,114 +185,114 @@ void Pin::print(uint32_t value) {
 
 #define IF_ELSE(cCond, T, F) cCond(T, F)
 
-static PROGMEM read_only_array_block<PinInfo, 20> pins = {{
+static PROGMEM read_only_elements<PinInfo, 20> pins = {{
   /* 00 */ {
       Timers::kNotOnTimer,
-      1 << 0,
+      0,
       PortInfo::kPd
   },
   /* 01 */ {
       Timers::kNotOnTimer,
-      1 << 1,
+      1,
       PortInfo::kPd
   },
   /* 02 */ {
       Timers::kNotOnTimer,
-      1 << 2,
+      2,
       PortInfo::kPd
   },
   /* 03 */ {
       IF_ELSE(cAtMega8, Timers::kTimer2B, Timers::kNotOnTimer),
-      1 << 3,
+      3,
       PortInfo::kPd
   },
   /* 04 */ {
       Timers::kNotOnTimer,
-      1 << 4,
+      4,
       PortInfo::kPd
   },
   /* 05 */ {
       IF_ELSE(cAtMega8, Timers::kTimer0B, Timers::kNotOnTimer),
-      1 << 5,
+      5,
       PortInfo::kPd
   },
   /* 06 */ {
       IF_ELSE(cAtMega8, Timers::kTimer0A, Timers::kNotOnTimer),
-      1 << 6,
+      6,
       PortInfo::kPd
   },
   /* 07 */ {
       Timers::kNotOnTimer,
-      1 << 7,
+      7,
       PortInfo::kPd
   },
   /* 08 */ { // ---
       Timers::kNotOnTimer,
-      1 << 0,
+      0,
       PortInfo::kPd
   },
   /* 09 */ {
       Timers::kTimer1A,
-      1 << 1,
+      1,
       PortInfo::kPb
   },
   /* 10 */ {
       Timers::kTimer1B,
-      1 << 2,
+      2,
       PortInfo::kPb
   },
   /* 11 */ {
       IF_ELSE(cAtMega8, Timers::kTimer2, Timers::kTimer2A),
-      1 << 3,
+      3,
       PortInfo::kPb
   },
   /* 12 */ {
       Timers::kNotOnTimer,
-      1 << 4,
+      4,
       PortInfo::kPb
   },
   /* 13 */ {
       Timers::kNotOnTimer,
-      1 << 5,
+      5,
       PortInfo::kPb
   },
   /* 14 */ { // ---
       Timers::kNotOnTimer,
-      1 << 0,
+      0,
       PortInfo::kPd
   },
   /* 15 */ {
       Timers::kNotOnTimer,
-      1 << 1,
+      1,
       PortInfo::kPd
   },
   /* 16 */ {
       Timers::kNotOnTimer,
-      1 << 2,
+      2,
       PortInfo::kPd
   },
   /* 17 */ {
       Timers::kNotOnTimer,
-      1 << 3,
+      3,
       PortInfo::kPd
   },
   /* 18 */ {
       Timers::kNotOnTimer,
-      1 << 4,
+      4,
       PortInfo::kPd
   },
   /* 19 */ {
       Timers::kNotOnTimer,
-      1 << 5,
+      5,
       PortInfo::kPd
   },
 }};
 
-read_only_array<PinInfo> PinInfo::get() {
+read_only_vector<PinInfo> PinInfo::get() {
   return pins;
 }
 
-static PROGMEM read_only_array_block<PortInfo, 5> ports = {{
+static PROGMEM read_only_elements<PortInfo, 5> ports = {{
   /* - */ { 0, 0, 0 },
   /* - */ { 0, 0, 0 },
   /* B */ { &DDRB, &PORTB, &PINB },
@@ -299,6 +300,6 @@ static PROGMEM read_only_array_block<PortInfo, 5> ports = {{
   /* D */ { &DDRB, &PORTD, &PIND },
 }};
 
-read_only_array<PortInfo> PortInfo::get() {
+read_only_vector<PortInfo> PortInfo::get() {
   return ports;
 }

@@ -142,9 +142,10 @@ void Main::initialize_timers() {
 
 int Main::main() {
   initialize_timers();
-  setup();
+  Main::Data *data;
+  data = &setup();
   while (true) {
-    loop();
+    loop(*data);
     if (serialEventRun)
       serialEventRun();
   }

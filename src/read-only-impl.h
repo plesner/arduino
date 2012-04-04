@@ -20,11 +20,16 @@ public:
 };
 
 template <typename T>
-T read_only_array<T>::operator[](size_t index) {
+T read_only_vector<T>::operator[](size_t index) {
   union { uint8_t in[sizeof(T)]; T out; } converter;
   uint16_t address = reinterpret_cast<uint16_t>(data_ + index);
   ReadOnlyArrayByteReader<sizeof(T)>::read(address, converter.in);
   return converter.out;
+}
+
+template <typename T, size_t kLength>
+T read_only_elements<T, kLength>::operator[](size_t i) {
+  return read_only_vector<T>(*this)[i];
 }
 
 #endif // _READ_ONLY_IMPL

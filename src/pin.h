@@ -3,6 +3,7 @@
 
 #include "read-only.h"
 
+// Rudimentary timer control class. For now just contains constants.
 struct Timers {
 public:
   static const uint8_t kNotOnTimer = 0;
@@ -25,32 +26,50 @@ public:
   static const uint8_t kTimer5C = 17;
 };
 
+// All the relevant metadata about a pin.
 struct PinInfo {
-  int8_t timer;
-  int8_t bit_mask;
-  int8_t port;
-  int8_t padding;
+  // The index of this pin's timer.
+  int8_t timer : 5;
 
-  static read_only_array<PinInfo> get();
+  // The mask used to set or unset this pin in the in/out registers.
+  int8_t bit_index : 3;
+
+  // The index of the port that controls this pin.
+  int8_t port : 3;
+
+  // Returns the array of pin info for the current platform.
+  static read_only_vector<PinInfo> get();
 };
 
+// All the relevant metadata about a port.
 struct PortInfo {
+  // Symbolic names for the ports.
   static const int8_t kNotAPort = 0;
   static const int8_t kPb = 2;
   static const int8_t kPc = 3;
   static const int8_t kPd = 4;
 
+  // Address of the mode register.
   volatile uint8_t *mode_register;
+
+  // Address of the output register.
   volatile uint8_t *output_register;
+
+  // Address of the input register.
   volatile uint8_t *input_register;
 
-  static read_only_array<PortInfo> get();
+  // Returns the array of port info for the current platform.
+  static read_only_vector<PortInfo> get();
 };
 
 // A single input/output pin. Create an instance by using the static
 // constructor 'get'.
 class Pin {
 public:
+  // Initialize an empty pin. Trying to use an empty pin will lead to
+  // unpredictable results.
+  Pin() { }
+
   // Which direction data flows, in or out of a pin.
   enum DataDirection { IN, OUT };
 
@@ -73,6 +92,7 @@ public:
   void print(uint32_t value);
 
 private:
+
   Pin(uint8_t index)
       : pin_info_(PinInfo::get()[index])
       , port_info_(PortInfo::get()[pin_info().port]){ }
