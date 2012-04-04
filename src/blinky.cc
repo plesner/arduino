@@ -9,13 +9,13 @@ public:
   void initialize();
   vector<Pin> pins() { return pins_; }
 private:
-  elements<Pin, 6> pins_;
+  elements<Pin, 5> pins_;
 };
 
 static uninitialized<MainData> main_data;
 
 void MainData::initialize() {
-  elements<uint8_t, 6> map = {{13, 11, 12, 10, 9, 8}};
+  elements<uint8_t, 5> map = {{11, 12, 10, 9, 8}};
   for (uint8_t i = 0; i < map.length(); i++) {
     pins_[i] = Pin::get(map[i]);
     pins_[i].set_data_direction(Pin::OUT);
@@ -43,10 +43,15 @@ void Digit::show(uint8_t value) {
 }
 
 void Main::loop() {
+  elements<uint8_t, 8> loop = {{
+    1, 2, 4, 8, 16, 8, 4, 2
+  }};
   MainData &data = *main_data;
   Digit digit(data.pins());
-  for (int8_t value = -5; value < 5; value++) {
-    digit.show(1 << (value < 0 ? -value : value));
-    Time::sleep(Duration::millis(100));
+  while (true) {
+    for (uint8_t i = 0; i < loop.length(); i++) {
+      digit.show(loop[i]);
+      Time::sleep(Time::millis(100));
+    }
   }
 }

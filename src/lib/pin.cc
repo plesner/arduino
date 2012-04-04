@@ -4,6 +4,8 @@
 #include "read-only-impl.h"
 #include "time.h"
 
+#include <avr/io.h>
+
 void Pin::set_data_direction(DataDirection value) {
   if (!is_pin())
     return;
@@ -23,6 +25,10 @@ void Pin::set_data_direction(DataDirection value) {
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
+
+#define timer_control_register(NAME) TCCR##NAME
+
+#define eForEachTimer(F) F(0A) F(1A)
 
 // Forcing this inline keeps the callers from having to push their own stuff
 // on the stack. It is a good performance win and only takes 1 more byte per
@@ -166,20 +172,6 @@ bool Pin::is_high() {
   return (*reg & bit_mask);
 }
 
-void Pin::print(uint32_t value) {
-  bool initial = is_high();
-  uint32_t current = value;
-  do {
-    bool is_on = current & 1;
-    current = current >> 1;
-    set_high(true);
-    Time::sleep(Duration::millis(is_on ? 250 : 100));
-    set_high(false);
-    Time::sleep(Duration::millis(350));
-  } while (current != 0);
-  set_high(initial);
-}
-
 #define cAtMega8(T, F) F
 
 #define IF_ELSE(cCond, T, F) cCond(T, F)
@@ -187,103 +179,103 @@ void Pin::print(uint32_t value) {
 static read_only<PinInfo, 20> pins = {{
   /* 00 */ {
       Timers::kNotOnTimer,
-      0,
+      PIND0,
       PortInfo::kPd
   },
   /* 01 */ {
       Timers::kNotOnTimer,
-      1,
+      PIND1,
       PortInfo::kPd
   },
   /* 02 */ {
       Timers::kNotOnTimer,
-      2,
+      PIND2,
       PortInfo::kPd
   },
   /* 03 */ {
       IF_ELSE(cAtMega8, Timers::kTimer2B, Timers::kNotOnTimer),
-      3,
+      PIND3,
       PortInfo::kPd
   },
   /* 04 */ {
       Timers::kNotOnTimer,
-      4,
+      PIND4,
       PortInfo::kPd
   },
   /* 05 */ {
       IF_ELSE(cAtMega8, Timers::kTimer0B, Timers::kNotOnTimer),
-      5,
+      PIND5,
       PortInfo::kPd
   },
   /* 06 */ {
       IF_ELSE(cAtMega8, Timers::kTimer0A, Timers::kNotOnTimer),
-      6,
+      PIND6,
       PortInfo::kPd
   },
   /* 07 */ {
       Timers::kNotOnTimer,
-      7,
+      PIND7,
       PortInfo::kPd
   },
   /* 08 */ { // ---
       Timers::kNotOnTimer,
-      0,
-      PortInfo::kPd
+      PINB0,
+      PortInfo::kPb
   },
   /* 09 */ {
       Timers::kTimer1A,
-      1,
+      PINB1,
       PortInfo::kPb
   },
   /* 10 */ {
       Timers::kTimer1B,
-      2,
+      PINB2,
       PortInfo::kPb
   },
   /* 11 */ {
       IF_ELSE(cAtMega8, Timers::kTimer2, Timers::kTimer2A),
-      3,
+      PINB3,
       PortInfo::kPb
   },
   /* 12 */ {
       Timers::kNotOnTimer,
-      4,
+      PINB4,
       PortInfo::kPb
   },
   /* 13 */ {
       Timers::kNotOnTimer,
-      5,
+      PINB5,
       PortInfo::kPb
   },
   /* 14 */ { // ---
       Timers::kNotOnTimer,
-      0,
-      PortInfo::kPd
+      PINC0,
+      PortInfo::kPc
   },
   /* 15 */ {
       Timers::kNotOnTimer,
-      1,
-      PortInfo::kPd
+      PINC1,
+      PortInfo::kPc
   },
   /* 16 */ {
       Timers::kNotOnTimer,
-      2,
-      PortInfo::kPd
+      PINC2,
+      PortInfo::kPc
   },
   /* 17 */ {
       Timers::kNotOnTimer,
-      3,
-      PortInfo::kPd
+      PINC3,
+      PortInfo::kPc
   },
   /* 18 */ {
       Timers::kNotOnTimer,
-      4,
-      PortInfo::kPd
+      PINC4,
+      PortInfo::kPc
   },
   /* 19 */ {
       Timers::kNotOnTimer,
-      5,
-      PortInfo::kPd
+      PINC5,
+      PortInfo::kPc
   },
 }};
 
@@ -295,8 +287,8 @@ static read_only<PortInfo, 5> ports = {{
   /* - */ { 0, 0, 0 },
   /* - */ { 0, 0, 0 },
   /* B */ { &DDRB, &PORTB, &PINB },
-  /* C */ { &DDRB, &PORTC, &PINC },
-  /* D */ { &DDRB, &PORTD, &PIND },
+  /* C */ { &DDRC, &PORTC, &PINC },
+  /* D */ { &DDRD, &PORTD, &PIND },
 }};
 
 read_only_vector<PortInfo> PortInfo::get() {

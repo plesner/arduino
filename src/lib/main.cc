@@ -2,6 +2,8 @@
 #include "main.h"
 #include "platform.h"
 
+#include <avr/io.h>
+
 class FunctionRegister {
 public:
   static inline void set(volatile uint8_t &reg, uint8_t bit) {

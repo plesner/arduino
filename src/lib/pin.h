@@ -32,7 +32,7 @@ struct PinInfo {
   int8_t timer : 5;
 
   // The mask used to set or unset this pin in the in/out registers.
-  int8_t bit_index : 3;
+  uint8_t bit_index : 3;
 
   // The index of the port that controls this pin.
   int8_t port : 3;
@@ -87,9 +87,6 @@ public:
 
   // Returns true iff this pin is high.
   bool is_high();
-
-  // Displays the given value on this pin in binary.
-  void print(uint32_t value);
 
 private:
 
