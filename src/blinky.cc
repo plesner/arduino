@@ -24,8 +24,15 @@ void Main::setup() {
 }
 
 void Main::loop() {
-  for (uint16_t i = 0x00; true; i++) {
-    main_data->shift().set_value(i);
-    Time::sleep(Time::millis(100));
+  uint8_t total = 16;
+  uint8_t fraction = 8;
+  for (uint8_t i = 0x00; true; i++) {
+    for (uint8_t i = 0; i != 0xFF; i++) {
+      if (i % total < fraction) {
+        main_data->shift().set_value(i);
+      } else {
+        main_data->shift().set_value(0);
+      }
+    }
   }
 }
