@@ -6,26 +6,34 @@
 
 #include <avr/io.h>
 
-void Pin::set_data_direction(DataDirection value) {
-  if (!is_pin())
-    return;
-
-  // JWS: can I let the optimizer do this?
-  volatile uint8_t *reg = port_info().mode_register;
-
-  Interrupts::DisableDuring disable_interrupts;
-  uint8_t bit_mask = 1 << pin_info().bit_index;
-  if (value == IN) {
-    *reg &= ~bit_mask;
-  } else {
-    *reg |= bit_mask;
-  }
-}
-
 Pin Pin::open(uint8_t index, DataDirection mode) {
-  Pin result(index);
-  result.set_data_direction(mode);
-  return result;
+  // Load the metadata from program storage.
+  PinInfo pin_info = PinInfo::get()[index];
+  PortInfo port_info = PortInfo::get()[pin_info.port];
+
+  // If this isn't a valid index we return an empty pin value.
+  if (pin_info.port == PortInfo::kNotAPort)
+    return Pin();
+
+  // Hoist the data we need from the metadata.
+  uint8_t bit_mask = (1 << pin_info.bit_index);
+  volatile uint8_t *io_register = (mode == OUT)
+      ? port_info.output_register
+      : port_info.input_register;
+
+  // Write the appropriate mode into the mode register.
+  volatile uint8_t *mode_register = port_info.mode_register;
+  Interrupts::DisableDuring disable_interrupts;
+  if (mode == IN) {
+    *mode_register &= ~bit_mask;
+  } else {
+    *mode_register |= bit_mask;
+  }
+
+  // Opening a pin for i/o disables pulse width modulation.
+  disable_pwm(pin_info.timer);
+
+  return Pin(io_register, bit_mask);
 }
 
 #ifndef cbi
@@ -46,10 +54,10 @@ Pin Pin::open(uint8_t index, DataDirection mode) {
 //
 //static inline void turnOffPWM(uint8_t timer) __attribute__ ((always_inline));
 //static inline void turnOffPWM(uint8_t timer)
-void Pin::disable_pwm() {
-  if (!is_on_timer())
+void Pin::disable_pwm(uint8_t timer) {
+  if (timer == Timers::kNotOnTimer)
     return;
-  switch (pin_info().timer) {
+  switch (timer) {
 #if defined(TCCR1A) && defined(COM1A1)
   case Timers::kTimer1A:
     cbi(TCCR1A, COM1A1);
@@ -146,18 +154,11 @@ void Pin::set_high(bool is_on) {
   if (!is_pin())
     return;
 
-  // If the pin that support PWM output, we need to turn it off
-  // before doing a digital write.
-  disable_pwm();
-
-  volatile uint8_t *reg = port_info().output_register;
-
   Interrupts::DisableDuring disable_interrupts;
-  uint8_t bit_mask = 1 << pin_info().bit_index;
   if (is_on) {
-    *reg |= bit_mask;
+    *io_register_ |= bit_mask_;
   } else {
-    *reg &= ~bit_mask;
+    *io_register_ &= ~bit_mask_;
   }
 }
 
@@ -165,13 +166,7 @@ bool Pin::is_high() {
   if (!is_pin())
     return false;
 
-  // If the pin that support PWM output, we need to turn it off
-  // before getting a digital reading.
-  disable_pwm();
-  volatile uint8_t *reg = port_info().input_register;
-  uint8_t bit_mask = 1 << pin_info().bit_index;
-
-  return (*reg & bit_mask);
+  return (*io_register_) & bit_mask_;
 }
 
 static read_only<PinInfo, 20> pins = {{

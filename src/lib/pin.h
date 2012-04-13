@@ -68,7 +68,9 @@ class Pin {
 public:
   // Initialize an empty pin. Trying to use an empty pin will lead to
   // unpredictable results.
-  Pin() { }
+  Pin()
+      : io_register_(0)
+      , bit_mask_(0) { }
 
   // Which direction data flows, in or out of a pin.
   enum DataDirection { IN, OUT };
@@ -76,7 +78,7 @@ public:
   // The current value of a pin, high or low.
   enum Value { OFF = 0, ON = 1 };
 
-  // Returns the index'th pin.
+  // Returns the index'th pin, prepared for the specified kind of I/O.
   static Pin open(uint8_t index, DataDirection mode);
 
   // Sets the value of this pin.
@@ -86,34 +88,25 @@ public:
   bool is_high();
 
 private:
-  Pin(uint8_t index)
-      : pin_info_(PinInfo::get()[index])
-      , port_info_(PortInfo::get()[pin_info().port]){ }
-
-  // Sets the data direction of this pin.
-  void set_data_direction(DataDirection value);
+  // Initializes a pin. Don't call this directly, use Pin::open.
+  Pin(volatile uint8_t *io_register, uint8_t bit_mask)
+      : io_register_(io_register)
+      , bit_mask_(bit_mask) { }
 
   // Returns true iff this is a valid pin.
-  bool is_pin() { return pin_info().port != PortInfo::kNotAPort; }
-
-  // Returns true if this pin is on a timer.
-  bool is_on_timer() { return pin_info().timer != Timers::kNotOnTimer; }
+  bool is_pin() { return bit_mask_ != 0; }
 
   // Disables pulse-width modulation for this pin. If this pin is not
   // on a timer does nothing.
-  void disable_pwm();
+  static void disable_pwm(uint8_t timer);
 
-  // Returns the metadata about this pin.
-  inline PinInfo &pin_info() { return pin_info_; }
+  // Pointer to the memory address that contains the bit that controls
+  // this pin.
+  volatile uint8_t *io_register_;
 
-  // Returns the metadata about the port this pin belongs to.
-  inline PortInfo &port_info() { return port_info_; }
-
-  // Metadata about this specific pin.
-  PinInfo pin_info_;
-
-  // Metadata about the port this pin belongs to.
-  PortInfo port_info_;
+  // The bit mask that identifies this pin within the I/O register.
+  // Will be 0 if this is not a pin.
+  uint8_t bit_mask_;
 };
 
 #endif // _PIN
