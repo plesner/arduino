@@ -26,10 +26,6 @@ void Pin::set_data_direction(DataDirection value) {
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
 
-#define timer_control_register(NAME) TCCR##NAME
-
-#define eForEachTimer(F) F(0A) F(1A)
-
 // Forcing this inline keeps the callers from having to push their own stuff
 // on the stack. It is a good performance win and only takes 1 more byte per
 // user than calling. (It will take more bytes on the 168.)
@@ -171,10 +167,6 @@ bool Pin::is_high() {
 
   return (*reg & bit_mask);
 }
-
-#define cAtMega8(T, F) F
-
-#define IF_ELSE(cCond, T, F) cCond(T, F)
 
 static read_only<PinInfo, 20> pins = {{
   /* 00 */ {

@@ -1,51 +1,29 @@
 #include "sreg-impl.h"
 #include "main.h"
 #include "platform.h"
+#include "timer-impl.h"
 
-#include <avr/io.h>
-
-class FunctionRegister {
-public:
-  static inline void set(volatile uint8_t &reg, uint8_t bit) {
-    reg |= (1 << bit);
-  }
-  static inline void clear(volatile uint8_t &reg, uint8_t bit) {
-    reg &= ~(1 << bit);
-  }
-};
-
-void Main::initialize_timers() {
-  // this needs to be called before setup() or some functions won't
+bool Main::initialize_timers() {
+  // This needs to be called before setup() or some functions won't
   // work there
   Interrupts::enable();
 
-  // on the ATmega168, timer 0 is also used for fast hardware pwm
+  // On the ATmega168 timer 0 is also used for fast hardware pwm
   // (using phase-correct PWM would mean that timer 0 overflowed half as often
   // resulting in different millis() behavior on the ATmega8 and ATmega168)
-#if defined(TCCR0A) && defined(WGM01)
-  FunctionRegister::set(TCCR0A, WGM01);
-  FunctionRegister::set(TCCR0A, WGM00);
-#endif
+  if (Tccr0A::kPresent)
+    Tccr0A::set_fast_pwm();
 
-  // set timer 0 prescale factor to 64
-#if defined(__AVR_ATmega128__)
-  // CPU specific: different values for the ATmega128
-  FunctionRegister::set(TCCR0, CS02);
-#elif defined(TCCR0) && defined(CS01) && defined(CS00)
-  // this combination is for the standard atmega8
-  FunctionRegister::set(TCCR0, CS01);
-  FunctionRegister::set(TCCR0, CS00);
-#elif defined(TCCR0B) && defined(CS01) && defined(CS00)
-  // this combination is for the standard 168/328/1280/2560
-  FunctionRegister::set(TCCR0B, CS01);
-  FunctionRegister::set(TCCR0B, CS00);
-#elif defined(TCCR0A) && defined(CS01) && defined(CS00)
-  // this combination is for the __AVR_ATmega645__ series
-  FunctionRegister::set(TCCR0A, CS01);
-  FunctionRegister::set(TCCR0A, CS00);
-#else
-  #error Timer 0 prescale factor 64 not set correctly
-#endif
+  // Set timer 0 prescale factor to 64
+  if (Tccr0::kPresent) {
+    Tccr0::set_prescale_factor<64>();
+  } else if (Tccr0B::kPresent) {
+    Tccr0B::set_prescale_factor<64>();
+  } else if (Tccr0A::kPresent) {
+    Tccr0A::set_prescale_factor<64>();
+  } else {
+    return false;
+  }
 
   // enable timer 0 overflow interrupt
 #if defined(TIMSK) && defined(TOIE0)
@@ -139,6 +117,8 @@ void Main::initialize_timers() {
 #elif defined(UCSR0B)
   UCSR0B = 0;
 #endif
+
+  return true;
 }
 
 extern void serialEventRun(void) __attribute__((weak));

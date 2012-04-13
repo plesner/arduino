@@ -23,7 +23,6 @@ public:
   // Returns a duration value of the given number of seconds.
   static inline duration_t seconds(uint32_t value) { return millis(value * 1000); }
 
-
 private:
   // Returns the current microsecond count.
   static uint16_t current_time_micros();

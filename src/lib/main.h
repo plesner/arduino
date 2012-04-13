@@ -15,7 +15,7 @@ public:
 
 private:
   // Sets up timers.
-  static void initialize_timers();
+  static bool initialize_timers();
 };
 
 #endif // _MAIN
