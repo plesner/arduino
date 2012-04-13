@@ -22,6 +22,12 @@ void Pin::set_data_direction(DataDirection value) {
   }
 }
 
+Pin Pin::open(uint8_t index, DataDirection mode) {
+  Pin result(index);
+  result.set_data_direction(mode);
+  return result;
+}
+
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif

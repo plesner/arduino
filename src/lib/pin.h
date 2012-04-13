@@ -77,10 +77,7 @@ public:
   enum Value { OFF = 0, ON = 1 };
 
   // Returns the index'th pin.
-  static Pin get(uint8_t index) { return Pin(index); }
-
-  // Sets the data direction of this pin.
-  void set_data_direction(DataDirection value);
+  static Pin open(uint8_t index, DataDirection mode);
 
   // Sets the value of this pin.
   void set_high(bool is_on);
@@ -89,10 +86,12 @@ public:
   bool is_high();
 
 private:
-
   Pin(uint8_t index)
       : pin_info_(PinInfo::get()[index])
       , port_info_(PortInfo::get()[pin_info().port]){ }
+
+  // Sets the data direction of this pin.
+  void set_data_direction(DataDirection value);
 
   // Returns true iff this is a valid pin.
   bool is_pin() { return pin_info().port != PortInfo::kNotAPort; }

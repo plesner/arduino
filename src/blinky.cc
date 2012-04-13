@@ -16,12 +16,9 @@ public:
 static uninitialized<MainData> main_data;
 
 void MainData::initialize() {
-  data_pin_ = Pin::get(9);
-  data_pin_.set_data_direction(Pin::OUT);
-  latch_pin_ = Pin::get(11);
-  latch_pin_.set_data_direction(Pin::OUT);
-  clock_pin_ = Pin::get(12);
-  clock_pin_.set_data_direction(Pin::OUT);
+  data_pin_ = Pin::open(9, Pin::OUT);
+  latch_pin_ = Pin::open(11, Pin::OUT);
+  clock_pin_ = Pin::open(12, Pin::OUT);
 }
 
 void shiftOut(Pin &dataPin, Pin &clockPin, uint8_t val) {
