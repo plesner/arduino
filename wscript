@@ -4,15 +4,16 @@ from waflib.Build import BuildContext
 from waflib.TaskGen import feature, extension, after, task_gen
 from waflib.Tools import ccroot
 
-APPNAME = 'arduino'
+APPNAME = 'scribble'
 VERSION = '0.01'
 
 top = '.'
 out = 'out'
-app = 'blink'
+apps = ['lcdshield', 'nokia']
 
 _DISTROOT = '/Applications/Arduino.app/Contents/Resources/Java'
 _HARDWARE = _DISTROOT + '/hardware'
+_LIBRARIES = _DISTROOT + '/libraries'
 _AVR = _HARDWARE + '/tools/avr'
 _AVR_BIN = _HARDWARE + '/tools/avr/bin/%s'
 _CORE_LIB = _HARDWARE + '/arduino/cores/arduino/'
@@ -26,6 +27,7 @@ _PROGRAMMER = 'arduino'
 def configure(conf):
   conf.load('compiler_cxx')
   conf.env['PORT'] = conf.options.port
+  conf.env['APP'] = conf.options.app
 
 def options(opt):
   opt.load('compiler_cxx')
@@ -37,6 +39,10 @@ def options(opt):
     default = None,
     action = 'store',
     help = 'which port to flash (typically /dev/tty.usbmodem...')
+  opt.add_option('--app',
+    default = apps[0],
+    action = 'store',
+    help = 'which app to flash')
   opt.add_option('--clock',
     default = '16000000',
     action = 'store',
@@ -72,7 +78,7 @@ class BuildHelper(object):
     self.build.new_task_gen(
       source = source,
       target = target,
-      rule   = '${OBJCOPY} -O ihex -R .eeprom ${SRC} ${TGT}'
+      rule   = '${OBJCOPY} -O ihex -R .eeprom -R .fuse -R .lock ${SRC} ${TGT}'
     )
 
   # Pulls the eeprom part out of the source binary and stores it in a
@@ -108,6 +114,13 @@ class BuildHelper(object):
       return options.port
     else:
       return self.build.env['PORT']
+  
+  def get_app(self):
+    options = self.build.options
+    if options.app:
+      return options.app
+    else:
+      return self.build.env['APP']
 
   def get_clock(self):
     return self.build.options.clock
@@ -117,20 +130,21 @@ class BuildHelper(object):
 
   def build_sources(self):
     self.configure_toolchain()
-    sources = self.build.path.ant_glob('src/**/*.cc')
-    includes = [_CORE_LIB, _PLATFORM_LIB]
-    elf_file = '%s.elf' % app
-    self.program(
-      source   = sources,
-      target   = elf_file,
-      includes = includes,
-      cxxflags = ['-Os', '-mmcu=%s' % self.get_device()] + _DIALECT,
-      linkflags = ['-Os', '-mmcu=%s' % self.get_device()],
-      defines  = ['F_CPU=%sL' % self.get_clock()]
-    )
-    self.remove_eeprom(elf_file, '%s.hex' % app)
-    self.extract_eeprom(elf_file, '%s.eep' % app)
-
+    lib_sources = self.build.path.ant_glob('src/lib/**/*.(cc|cpp|c)')
+    for app in apps:
+      app_sources = ['src/%s.cc' % app]
+      includes = [_CORE_LIB, _PLATFORM_LIB]
+      elf_file = '%s.elf' % app
+      self.program(
+        source   = lib_sources + app_sources,
+        target   = elf_file,
+        includes = includes,
+        cxxflags = ['-Os', '-mmcu=%s' % self.get_device()] + _DIALECT,
+        linkflags = ['-Os', '-mmcu=%s' % self.get_device(), '-Wl,--gc-sections'],
+        defines  = ['F_CPU=%sL' % self.get_clock()]
+      )
+      self.remove_eeprom(elf_file, '%s.hex' % app)
+      self.extract_eeprom(elf_file, '%s.eep' % app)
 
 def build(bld):
   helper = BuildHelper(bld)
@@ -138,6 +152,7 @@ def build(bld):
 
 def flash(bld):
   helper = BuildHelper(bld)
+  app = helper.get_app()
   helper.build_sources()
   helper.flash('%s.hex' % app, '%s.eep' % app)
 
